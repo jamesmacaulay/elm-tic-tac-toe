@@ -81,7 +81,7 @@ winningLines =
 
 lineWinner : Model -> List Int -> Maybe Symbol
 lineWinner model line =
-    case List.filterMap (flip Dict.get model) line of
+    case List.filterMap (\index -> Dict.get index model) line of
         [ X, X, X ] ->
             Just X
 
@@ -163,13 +163,9 @@ viewPlayState playState =
 viewBoard : Model -> Html Msg
 viewBoard model =
     let
-        indexRange =
-            List.range 0 8
-
         tableRows =
-            indexRange
-                |> List.map (flip Dict.get model)
-                |> List.map2 (,) indexRange
+            List.range 0 8
+                |> List.map (\index -> ( index, Dict.get index model ))
                 |> splitBy 3
                 |> List.map viewRow
     in
