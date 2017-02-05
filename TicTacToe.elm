@@ -6,21 +6,6 @@ import Html.Events exposing (..)
 import Dict exposing (Dict)
 
 
--- UTIL
-
-
-splitBy : Int -> List a -> List (List a)
-splitBy n xs =
-    if List.length xs <= n then
-        [ xs ]
-    else
-        List.take n xs :: splitBy n (List.drop n xs)
-
-
-
--- PROGRAM
-
-
 main : Program Never Model Msg
 main =
     Html.beginnerProgram
@@ -218,3 +203,15 @@ viewSpace ( index, space ) =
             |> Maybe.withDefault ""
             |> text
         ]
+
+
+
+-- UTIL
+
+
+splitBy : Int -> List a -> List (List a)
+splitBy n xs =
+    if List.length xs <= n then
+        [ xs ]
+    else
+        List.take n xs :: splitBy n (List.drop n xs)
