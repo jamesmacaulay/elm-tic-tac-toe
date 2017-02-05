@@ -3,9 +3,10 @@ module TicTacToe exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Array exposing (Array)
+import Dict exposing (Dict)
 
 
+main : Program Never Model Msg
 main =
     Html.beginnerProgram
         { model = newGame
@@ -19,18 +20,8 @@ type Symbol
     | O
 
 
-alternate : Symbol -> Symbol
-alternate symbol =
-    case symbol of
-        X ->
-            O
-
-        O ->
-            X
-
-
-type alias Board =
-    Array (Maybe Symbol)
+type alias Model =
+    Dict Int Symbol
 
 
 type PlayState
@@ -38,17 +29,9 @@ type PlayState
     | Winner Symbol
 
 
-type alias Model =
-    { board : Board
-    , playState : PlayState
-    }
-
-
 newGame : Model
 newGame =
-    { board = Array.repeat 9 Nothing
-    , playState = CurrentPlayer X
-    }
+    Dict.empty
 
 
 viewSpace : ( Int, Maybe Symbol ) -> Html Msg
@@ -88,19 +71,20 @@ splitBy n xs =
         List.take n xs :: splitBy n (List.drop n xs)
 
 
-viewBoard : Board -> Html Msg
-viewBoard board =
+indexRange : List Int
+indexRange =
+    List.range 0 8
+
+
+viewBoard : Model -> Html Msg
+viewBoard model =
     let
-        indexedSpaces : List ( Int, Maybe Symbol )
-        indexedSpaces =
-            Array.toIndexedList board
-
-        preparedBoard : List (List ( Int, Maybe Symbol ))
-        preparedBoard =
-            splitBy 3 indexedSpaces
-
         tableRows =
-            List.map viewRow preparedBoard
+            indexRange
+                |> List.map (flip Dict.get model)
+                |> List.map2 (,) indexRange
+                |> splitBy 3
+                |> List.map viewRow
     in
         table [] tableRows
 
@@ -128,8 +112,8 @@ view model =
             ]
         ]
         [ h1 [] [ text "Tic-Tac-Toe" ]
-        , viewPlayState model.playState
-        , viewBoard model.board
+        , viewPlayState (playState model)
+        , viewBoard model
         , button [ onClick Reset ] [ text "Reset" ]
         ]
 
@@ -162,51 +146,48 @@ winningLines =
     ]
 
 
-lineWinner : Board -> List Int -> Maybe Symbol
-lineWinner board line =
-    case List.filterMap (flip Array.get board) line of
-        [ Just X, Just X, Just X ] ->
+lineWinner : Model -> List Int -> Maybe Symbol
+lineWinner model line =
+    case List.filterMap (flip Dict.get model) line of
+        [ X, X, X ] ->
             Just X
 
-        [ Just O, Just O, Just O ] ->
+        [ O, O, O ] ->
             Just O
 
         _ ->
             Nothing
 
 
-boardWinner : Board -> Maybe Symbol
-boardWinner board =
+boardWinner : Model -> Maybe Symbol
+boardWinner model =
     winningLines
-        |> List.filterMap (lineWinner board)
+        |> List.filterMap (lineWinner model)
         |> List.head
 
 
+playState : Model -> PlayState
+playState model =
+    let
+        currentPlayer =
+            if Dict.size model % 2 == 0 then
+                X
+            else
+                O
+    in
+        boardWinner model
+            |> Maybe.map Winner
+            |> Maybe.withDefault (CurrentPlayer currentPlayer)
+
+
 mark : Int -> Model -> Model
-mark i ({ board, playState } as model) =
-    case playState of
+mark i model =
+    case playState model of
         Winner _ ->
             model
 
         CurrentPlayer symbol ->
-            case Array.get i board of
-                Just Nothing ->
-                    let
-                        board2 =
-                            Array.set i (Just symbol) board
-
-                        playState2 =
-                            case boardWinner board2 of
-                                Just winner ->
-                                    Winner winner
-
-                                Nothing ->
-                                    CurrentPlayer (alternate symbol)
-                    in
-                        { model
-                            | board = board2
-                            , playState = playState2
-                        }
-
-                _ ->
-                    model
+            if Dict.member i model then
+                model
+            else
+                Dict.insert i symbol model
