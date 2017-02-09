@@ -41,22 +41,30 @@ newGame =
 
 playState : Model -> PlayState
 playState model =
-    let
-        currentPlayer =
-            if Dict.size model % 2 == 0 then
-                X
-            else
-                O
+    case boardWinner model of
+        Just symbol ->
+            Winner symbol
 
-        default =
-            if Dict.size model == 9 then
+        Nothing ->
+            if isFullBoard model then
                 Draw
             else
-                CurrentPlayer currentPlayer
-    in
-        boardWinner model
-            |> Maybe.map Winner
-            |> Maybe.withDefault default
+                CurrentPlayer
+                    (if moveCountIsEven model then
+                        X
+                     else
+                        O
+                    )
+
+
+isFullBoard : Model -> Bool
+isFullBoard model =
+    Dict.size model == 9
+
+
+moveCountIsEven : Model -> Bool
+moveCountIsEven model =
+    Dict.size model % 2 == 0
 
 
 boardWinner : Model -> Maybe Symbol
