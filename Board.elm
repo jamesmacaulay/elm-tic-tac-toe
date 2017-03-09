@@ -125,13 +125,21 @@ splitBy n xs =
         List.take n xs :: splitBy n (List.drop n xs)
 
 
-view : { mark : Int -> msg, reset : msg } -> Board -> Html msg
-view { mark, reset } model =
+type alias MsgMapping msg =
+    { mark : Int -> msg
+    , reset : msg
+    , remove : msg
+    }
+
+
+view : MsgMapping msg -> Board -> Html msg
+view { mark, reset, remove } model =
     div
         []
         [ viewPlayState (playState model)
         , viewBoard mark model
         , button [ onClick reset ] [ text "Reset" ]
+        , button [ onClick remove ] [ text "Remove Board" ]
         ]
 
 

@@ -4,7 +4,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Board exposing (Board)
-import Array.Hamt as Array exposing (Array)
+import Dict exposing (Dict)
+import Tuple
 
 
 main : Program Never Model Msg
@@ -21,12 +22,29 @@ main =
 
 
 type alias Model =
-    Array Board
+    Dict Int Board
+
+
+nextBoardIndex : Model -> Int
+nextBoardIndex model =
+    List.foldr Basics.max -1 (Dict.keys model) + 1
+
+
+addEmptyBoard : Model -> Model
+addEmptyBoard model =
+    Dict.insert (nextBoardIndex model) Board.empty model
 
 
 singleEmptyBoard : Model
 singleEmptyBoard =
-    Array.fromList [ Board.empty ]
+    addEmptyBoard Dict.empty
+
+
+toOrderedList : Model -> List ( Int, Board )
+toOrderedList model =
+    model
+        |> Dict.toList
+        |> List.sortBy Tuple.first
 
 
 
@@ -37,29 +55,23 @@ type Msg
     = Mark Int Int
     | Reset Int
     | AddBoard
+    | RemoveBoard Int
 
 
 update : Msg -> Model -> Model
 update msg boards =
     case msg of
         Mark boardIndex spaceIndex ->
-            case Array.get boardIndex boards of
-                Just board ->
-                    Array.set boardIndex (Board.mark spaceIndex board) boards
-
-                Nothing ->
-                    boards
+            Dict.update boardIndex (Maybe.map (Board.mark spaceIndex)) boards
 
         Reset boardIndex ->
-            case Array.get boardIndex boards of
-                Just board ->
-                    Array.set boardIndex Board.empty boards
-
-                Nothing ->
-                    boards
+            Dict.update boardIndex (Maybe.map (always Board.empty)) boards
 
         AddBoard ->
-            Array.push Board.empty boards
+            addEmptyBoard boards
+
+        RemoveBoard boardIndex ->
+            Dict.remove boardIndex boards
 
 
 
@@ -77,13 +89,15 @@ view boards =
         ([ h1 [] [ text "Tic-Tac-Toe" ]
          , button [ onClick AddBoard ] [ text "Add Board" ]
          ]
-            ++ (boards |> Array.indexedMap viewBoard |> Array.toList)
+            ++ (toOrderedList boards |> List.map viewBoard)
         )
 
 
-viewBoard : Int -> Board -> Html Msg
-viewBoard boardNumber =
-    Board.view
-        { mark = Mark boardNumber
-        , reset = Reset boardNumber
-        }
+viewBoard : ( Int, Board ) -> Html Msg
+viewBoard ( boardIndex, board ) =
+    board
+        |> Board.view
+            { mark = Mark boardIndex
+            , reset = Reset boardIndex
+            , remove = RemoveBoard boardIndex
+            }
