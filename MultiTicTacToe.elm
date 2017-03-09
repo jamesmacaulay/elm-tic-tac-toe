@@ -3,14 +3,13 @@ module MultiTicTacToe exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Dict exposing (Dict)
-import Board
+import Board exposing (Board)
 
 
-main : Program Never Board.Model Msg
+main : Program Never Model Msg
 main =
     Html.beginnerProgram
-        { model = Board.newGame
+        { model = Board.empty
         , update = update
         , view = view
         }
@@ -21,7 +20,7 @@ main =
 
 
 type alias Model =
-    Board.Model
+    Board
 
 
 
@@ -37,23 +36,10 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         Mark i ->
-            mark i model
+            Board.mark i model
 
         Reset ->
-            Board.newGame
-
-
-mark : Int -> Model -> Model
-mark i model =
-    case Board.playState model of
-        Board.CurrentPlayer symbol ->
-            if Dict.member i model then
-                model
-            else
-                Dict.insert i symbol model
-
-        _ ->
-            model
+            Board.empty
 
 
 
@@ -93,12 +79,10 @@ viewPlayState playState =
 
 
 viewBoard : Model -> Html Msg
-viewBoard model =
+viewBoard board =
     let
         tableRows =
-            List.range 0 8
-                |> List.map (\index -> ( index, Dict.get index model ))
-                |> splitBy 3
+            Board.toTable board
                 |> List.map viewRow
     in
         table [] tableRows
@@ -131,15 +115,3 @@ viewSpace ( index, space ) =
             |> Maybe.withDefault ""
             |> text
         ]
-
-
-
--- UTIL
-
-
-splitBy : Int -> List a -> List (List a)
-splitBy n xs =
-    if List.length xs <= n then
-        [ xs ]
-    else
-        List.take n xs :: splitBy n (List.drop n xs)
