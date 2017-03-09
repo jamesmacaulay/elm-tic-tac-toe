@@ -4,12 +4,13 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Board exposing (Board)
+import Array.Hamt as Array exposing (Array)
 
 
 main : Program Never Model Msg
 main =
     Html.beginnerProgram
-        { model = Board.empty
+        { model = singleEmptyBoard
         , update = update
         , view = view
         }
@@ -20,7 +21,12 @@ main =
 
 
 type alias Model =
-    Board
+    Array Board
+
+
+singleEmptyBoard : Model
+singleEmptyBoard =
+    Array.fromList [ Board.empty ]
 
 
 
@@ -28,18 +34,28 @@ type alias Model =
 
 
 type Msg
-    = Mark Int
-    | Reset
+    = Mark Int Int
+    | Reset Int
 
 
 update : Msg -> Model -> Model
-update msg model =
+update msg boards =
     case msg of
-        Mark i ->
-            Board.mark i model
+        Mark boardIndex spaceIndex ->
+            case Array.get boardIndex boards of
+                Just board ->
+                    Array.set boardIndex (Board.mark spaceIndex board) boards
 
-        Reset ->
-            Board.empty
+                Nothing ->
+                    boards
+
+        Reset boardIndex ->
+            case Array.get boardIndex boards of
+                Just board ->
+                    Array.set boardIndex Board.empty boards
+
+                Nothing ->
+                    boards
 
 
 
@@ -47,21 +63,21 @@ update msg model =
 
 
 view : Model -> Html Msg
-view board =
+view boards =
     div
         [ style
             [ ( "margin", "0 20px" )
             , ( "font-family", "Helvetica" )
             ]
         ]
-        [ h1 [] [ text "Tic-Tac-Toe" ]
-        , viewBoard board
-        ]
+        ([ h1 [] [ text "Tic-Tac-Toe" ] ]
+            ++ (boards |> Array.indexedMap viewBoard |> Array.toList)
+        )
 
 
-viewBoard : Board -> Html Msg
-viewBoard =
+viewBoard : Int -> Board -> Html Msg
+viewBoard boardNumber =
     Board.view
-        { mark = Mark
-        , reset = Reset
+        { mark = Mark boardNumber
+        , reset = Reset boardNumber
         }
