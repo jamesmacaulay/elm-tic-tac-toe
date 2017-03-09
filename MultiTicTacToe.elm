@@ -36,6 +36,7 @@ singleEmptyBoard =
 type Msg
     = Mark Int Int
     | Reset Int
+    | AddBoard
 
 
 update : Msg -> Model -> Model
@@ -57,6 +58,9 @@ update msg boards =
                 Nothing ->
                     boards
 
+        AddBoard ->
+            Array.push Board.empty boards
+
 
 
 -- VIEW
@@ -70,7 +74,9 @@ view boards =
             , ( "font-family", "Helvetica" )
             ]
         ]
-        ([ h1 [] [ text "Tic-Tac-Toe" ] ]
+        ([ h1 [] [ text "Tic-Tac-Toe" ]
+         , button [ onClick AddBoard ] [ text "Add Board" ]
+         ]
             ++ (boards |> Array.indexedMap viewBoard |> Array.toList)
         )
 
