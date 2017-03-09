@@ -7,8 +7,12 @@ module Board
         , playState
         , mark
         , toTable
+        , view
         )
 
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Dict exposing (Dict)
 
 
@@ -119,3 +123,69 @@ splitBy n xs =
         [ xs ]
     else
         List.take n xs :: splitBy n (List.drop n xs)
+
+
+view : { mark : Int -> msg, reset : msg } -> Board -> Html msg
+view { mark, reset } model =
+    div
+        []
+        [ viewPlayState (playState model)
+        , viewBoard mark model
+        , button [ onClick reset ] [ text "Reset" ]
+        ]
+
+
+viewPlayState : PlayState -> Html msg
+viewPlayState playState =
+    let
+        message =
+            case playState of
+                CurrentPlayer symbol ->
+                    "Current player: " ++ toString symbol
+
+                Winner symbol ->
+                    toString symbol ++ " wins!"
+
+                Draw ->
+                    "Draw"
+    in
+        p [] [ text message ]
+
+
+viewBoard : (Int -> msg) -> Board -> Html msg
+viewBoard mark board =
+    let
+        tableRows =
+            toTable board
+                |> List.map (viewRow mark)
+    in
+        table [] tableRows
+
+
+viewRow : (Int -> msg) -> List ( Int, Maybe Symbol ) -> Html msg
+viewRow mark indexedSpaces =
+    let
+        tableCells =
+            List.map (viewSpace mark) indexedSpaces
+    in
+        tr [] tableCells
+
+
+viewSpace : (Int -> msg) -> ( Int, Maybe Symbol ) -> Html msg
+viewSpace mark ( index, space ) =
+    td
+        [ style
+            [ ( "background-color", "#eef" )
+            , ( "text-align", "center" )
+            , ( "font-size", "72px" )
+            , ( "font-family", "Helvetica" )
+            , ( "width", "100px" )
+            , ( "height", "100px" )
+            ]
+        , onClick (mark index)
+        ]
+        [ space
+            |> Maybe.map toString
+            |> Maybe.withDefault ""
+            |> text
+        ]

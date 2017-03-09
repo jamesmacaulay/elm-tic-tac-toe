@@ -47,7 +47,7 @@ update msg model =
 
 
 view : Model -> Html Msg
-view model =
+view board =
     div
         [ style
             [ ( "margin", "0 20px" )
@@ -55,63 +55,13 @@ view model =
             ]
         ]
         [ h1 [] [ text "Tic-Tac-Toe" ]
-        , viewPlayState (Board.playState model)
-        , viewBoard model
-        , button [ onClick Reset ] [ text "Reset" ]
+        , viewBoard board
         ]
 
 
-viewPlayState : Board.PlayState -> Html Msg
-viewPlayState playState =
-    let
-        message =
-            case playState of
-                Board.CurrentPlayer symbol ->
-                    "Current player: " ++ toString symbol
-
-                Board.Winner symbol ->
-                    toString symbol ++ " wins!"
-
-                Board.Draw ->
-                    "Draw"
-    in
-        p [] [ text message ]
-
-
-viewBoard : Model -> Html Msg
-viewBoard board =
-    let
-        tableRows =
-            Board.toTable board
-                |> List.map viewRow
-    in
-        table [] tableRows
-
-
-viewRow : List ( Int, Maybe Board.Symbol ) -> Html Msg
-viewRow indexedSpaces =
-    let
-        tableCells =
-            List.map viewSpace indexedSpaces
-    in
-        tr [] tableCells
-
-
-viewSpace : ( Int, Maybe Board.Symbol ) -> Html Msg
-viewSpace ( index, space ) =
-    td
-        [ style
-            [ ( "background-color", "#eef" )
-            , ( "text-align", "center" )
-            , ( "font-size", "72px" )
-            , ( "font-family", "Helvetica" )
-            , ( "width", "100px" )
-            , ( "height", "100px" )
-            ]
-        , onClick (Mark index)
-        ]
-        [ space
-            |> Maybe.map toString
-            |> Maybe.withDefault ""
-            |> text
-        ]
+viewBoard : Board -> Html Msg
+viewBoard =
+    Board.view
+        { mark = Mark
+        , reset = Reset
+        }
