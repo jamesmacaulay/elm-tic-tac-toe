@@ -21,7 +21,7 @@ main =
 
 
 type alias Model =
-    Board
+    Dict Int Board
 
 
 type Symbol
@@ -35,9 +35,26 @@ type PlayState
     | Draw
 
 
+noBoards : Model
+noBoards =
+    Dict.empty
+
+
+nextIndex : Model -> Int
+nextIndex model =
+    Dict.keys model
+        |> List.foldr Basics.max -1
+        |> (+) 1
+
+
+addEmptyBoard : Model -> Model
+addEmptyBoard model =
+    Dict.insert (nextIndex model) Board.empty model
+
+
 newGame : Model
 newGame =
-    Board.empty
+    addEmptyBoard Dict.empty
 
 
 
@@ -45,18 +62,18 @@ newGame =
 
 
 type Msg
-    = Mark Int
-    | Reset
+    = Mark Int Int
+    | ResetBoard Int
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        Mark i ->
-            Board.mark i model
+        Mark boardIndex spaceIndex ->
+            Dict.update boardIndex (Maybe.map (Board.mark spaceIndex)) model
 
-        Reset ->
-            newGame
+        ResetBoard boardIndex ->
+            Dict.insert boardIndex Board.empty model
 
 
 
@@ -71,10 +88,18 @@ view model =
             , ( "font-family", "Helvetica" )
             ]
         ]
-        [ h1 [] [ text "Tic-Tac-Toe" ]
-        , viewPlayState (Board.playState model)
-        , viewBoard model
-        , button [ onClick Reset ] [ text "Reset" ]
+        ([ h1 [] [ text "Tic-Tac-Toe" ] ]
+            ++ (model |> Dict.toList |> List.map viewBoard)
+        )
+
+
+viewBoard : ( Int, Board ) -> Html Msg
+viewBoard ( boardIndex, board ) =
+    div
+        []
+        [ viewPlayState (Board.playState board)
+        , viewBoardGrid boardIndex board
+        , button [ onClick (ResetBoard boardIndex) ] [ text "Reset" ]
         ]
 
 
@@ -95,28 +120,28 @@ viewPlayState playState =
         p [] [ text message ]
 
 
-viewBoard : Model -> Html Msg
-viewBoard model =
+viewBoardGrid : Int -> Board -> Html Msg
+viewBoardGrid boardIndex board =
     let
         tableRows =
-            model
+            board
                 |> Board.toTable
-                |> List.map viewRow
+                |> List.map (viewRow boardIndex)
     in
         table [] tableRows
 
 
-viewRow : List ( Int, Maybe Board.Symbol ) -> Html Msg
-viewRow indexedSpaces =
+viewRow : Int -> List ( Int, Maybe Board.Symbol ) -> Html Msg
+viewRow boardIndex indexedSpaces =
     let
         tableCells =
-            List.map viewSpace indexedSpaces
+            List.map (viewSpace boardIndex) indexedSpaces
     in
         tr [] tableCells
 
 
-viewSpace : ( Int, Maybe Board.Symbol ) -> Html Msg
-viewSpace ( index, space ) =
+viewSpace : Int -> ( Int, Maybe Board.Symbol ) -> Html Msg
+viewSpace boardIndex ( spaceIndex, space ) =
     td
         [ style
             [ ( "background-color", "#eef" )
@@ -126,14 +151,10 @@ viewSpace ( index, space ) =
             , ( "width", "100px" )
             , ( "height", "100px" )
             ]
-        , onClick (Mark index)
+        , onClick (Mark boardIndex spaceIndex)
         ]
         [ space
             |> Maybe.map toString
             |> Maybe.withDefault ""
             |> text
         ]
-
-
-
--- UTIL
