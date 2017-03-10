@@ -57,6 +57,14 @@ newGame =
     addEmptyBoard Dict.empty
 
 
+orderedBoards : Model -> List Board
+orderedBoards model =
+    model
+        |> Dict.keys
+        |> List.sort
+        |> List.filterMap (flip Dict.get model)
+
+
 
 -- UPDATE
 
@@ -99,15 +107,14 @@ view model =
         ([ h1 [] [ text "Tic-Tac-Toe" ]
          , button [ onClick AddBoard ] [ text "Add Board" ]
          ]
-            ++ (model |> Dict.toList |> List.map viewBoard)
+            ++ (orderedBoards model |> List.indexedMap viewBoard)
         )
 
 
-viewBoard : ( Int, Board ) -> Html Msg
-viewBoard ( boardIndex, board ) =
-    board
-        |> Board.view
-            { mark = Mark boardIndex
-            , reset = ResetBoard boardIndex
-            , remove = RemoveBoard boardIndex
-            }
+viewBoard : Int -> Board -> Html Msg
+viewBoard boardIndex =
+    Board.view
+        { mark = Mark boardIndex
+        , reset = ResetBoard boardIndex
+        , remove = RemoveBoard boardIndex
+        }
