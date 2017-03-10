@@ -64,6 +64,8 @@ newGame =
 type Msg
     = Mark Int Int
     | ResetBoard Int
+    | AddBoard
+    | RemoveBoard Int
 
 
 update : Msg -> Model -> Model
@@ -74,6 +76,12 @@ update msg model =
 
         ResetBoard boardIndex ->
             Dict.insert boardIndex Board.empty model
+
+        AddBoard ->
+            addEmptyBoard model
+
+        RemoveBoard boardIndex ->
+            Dict.remove boardIndex model
 
 
 
@@ -88,7 +96,9 @@ view model =
             , ( "font-family", "Helvetica" )
             ]
         ]
-        ([ h1 [] [ text "Tic-Tac-Toe" ] ]
+        ([ h1 [] [ text "Tic-Tac-Toe" ]
+         , button [ onClick AddBoard ] [ text "Add Board" ]
+         ]
             ++ (model |> Dict.toList |> List.map viewBoard)
         )
 
@@ -100,6 +110,7 @@ viewBoard ( boardIndex, board ) =
         [ viewPlayState (Board.playState board)
         , viewBoardGrid boardIndex board
         , button [ onClick (ResetBoard boardIndex) ] [ text "Reset" ]
+        , button [ onClick (RemoveBoard boardIndex) ] [ text "Remove Board" ]
         ]
 
 
