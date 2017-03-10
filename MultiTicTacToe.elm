@@ -105,67 +105,9 @@ view model =
 
 viewBoard : ( Int, Board ) -> Html Msg
 viewBoard ( boardIndex, board ) =
-    div
-        []
-        [ viewPlayState (Board.playState board)
-        , viewBoardGrid boardIndex board
-        , button [ onClick (ResetBoard boardIndex) ] [ text "Reset" ]
-        , button [ onClick (RemoveBoard boardIndex) ] [ text "Remove Board" ]
-        ]
-
-
-viewPlayState : Board.PlayState -> Html Msg
-viewPlayState playState =
-    let
-        message =
-            case playState of
-                Board.CurrentPlayer symbol ->
-                    "Current player: " ++ toString symbol
-
-                Board.Winner symbol ->
-                    toString symbol ++ " wins!"
-
-                Board.Draw ->
-                    "Draw"
-    in
-        p [] [ text message ]
-
-
-viewBoardGrid : Int -> Board -> Html Msg
-viewBoardGrid boardIndex board =
-    let
-        tableRows =
-            board
-                |> Board.toTable
-                |> List.map (viewRow boardIndex)
-    in
-        table [] tableRows
-
-
-viewRow : Int -> List ( Int, Maybe Board.Symbol ) -> Html Msg
-viewRow boardIndex indexedSpaces =
-    let
-        tableCells =
-            List.map (viewSpace boardIndex) indexedSpaces
-    in
-        tr [] tableCells
-
-
-viewSpace : Int -> ( Int, Maybe Board.Symbol ) -> Html Msg
-viewSpace boardIndex ( spaceIndex, space ) =
-    td
-        [ style
-            [ ( "background-color", "#eef" )
-            , ( "text-align", "center" )
-            , ( "font-size", "72px" )
-            , ( "font-family", "Helvetica" )
-            , ( "width", "100px" )
-            , ( "height", "100px" )
-            ]
-        , onClick (Mark boardIndex spaceIndex)
-        ]
-        [ space
-            |> Maybe.map toString
-            |> Maybe.withDefault ""
-            |> text
-        ]
+    board
+        |> Board.view
+            { mark = Mark boardIndex
+            , reset = ResetBoard boardIndex
+            , remove = RemoveBoard boardIndex
+            }

@@ -7,8 +7,12 @@ module Board
         , mark
         , playState
         , toTable
+        , view
         )
 
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Dict exposing (Dict)
 
 
@@ -124,3 +128,82 @@ splitBy n xs =
         [ xs ]
     else
         List.take n xs :: splitBy n (List.drop n xs)
+
+
+
+-- VIEW
+
+
+type alias Messages msg =
+    { mark : Int -> msg
+    , reset : msg
+    , remove : msg
+    }
+
+
+view : Messages msg -> Board -> Html msg
+view messages board =
+    div
+        []
+        [ viewPlayState (playState board)
+        , viewBoardGrid messages board
+        , button [ onClick messages.reset ] [ text "Reset" ]
+        , button [ onClick messages.remove ] [ text "Remove Board" ]
+        ]
+
+
+viewPlayState : PlayState -> Html msg
+viewPlayState playState =
+    let
+        message =
+            case playState of
+                CurrentPlayer symbol ->
+                    "Current player: " ++ toString symbol
+
+                Winner symbol ->
+                    toString symbol ++ " wins!"
+
+                Draw ->
+                    "Draw"
+    in
+        p [] [ text message ]
+
+
+viewBoardGrid : Messages msg -> Board -> Html msg
+viewBoardGrid messages board =
+    let
+        tableRows =
+            board
+                |> toTable
+                |> List.map (viewRow messages)
+    in
+        table [] tableRows
+
+
+viewRow : Messages msg -> List ( Int, Maybe Symbol ) -> Html msg
+viewRow messages indexedSpaces =
+    let
+        tableCells =
+            List.map (viewSpace messages) indexedSpaces
+    in
+        tr [] tableCells
+
+
+viewSpace : Messages msg -> ( Int, Maybe Symbol ) -> Html msg
+viewSpace messages ( spaceIndex, space ) =
+    td
+        [ style
+            [ ( "background-color", "#eef" )
+            , ( "text-align", "center" )
+            , ( "font-size", "72px" )
+            , ( "font-family", "Helvetica" )
+            , ( "width", "100px" )
+            , ( "height", "100px" )
+            ]
+        , onClick (messages.mark spaceIndex)
+        ]
+        [ space
+            |> Maybe.map toString
+            |> Maybe.withDefault ""
+            |> text
+        ]
